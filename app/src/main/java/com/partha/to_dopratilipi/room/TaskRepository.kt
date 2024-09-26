@@ -1,0 +1,20 @@
+package com.partha.to_dopratilipi.room
+
+class TaskRepository(private val taskDao: TaskDao) {
+
+    suspend fun getAllTasks(): List<TaskEntity>? {
+        return taskDao.getAllTasks()
+    }
+
+    suspend fun insert(task: TaskEntity) {
+        taskDao.insertTask(task)
+    }
+
+    suspend fun update(task: TaskEntity) {
+        taskDao.updateTask(task)
+    }
+
+    suspend fun delete(task: TaskEntity) {
+        taskDao.deleteTask(task)
+    }
+}
