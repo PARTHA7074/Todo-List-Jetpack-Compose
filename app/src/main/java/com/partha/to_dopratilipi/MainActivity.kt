@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.livedata.observeAsState
+import com.partha.to_dopratilipi.room.TaskEntity
 import com.partha.to_dopratilipi.ui.theme.TODOPratilipiTheme
 
 class MainActivity : ComponentActivity() {
@@ -47,11 +51,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    val items = remember { mutableStateListOf("Task 1", "Task 2", "Task 3") }
+fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewModel()) {
+    val tasks by viewModel.allTasks.observeAsState(emptyList())
     var showEditDialog by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
-    var currentItemIndex by remember { mutableIntStateOf(-1) }
+    var currentItem by remember { mutableStateOf<TaskEntity?>(null) }
     var editedText by remember { mutableStateOf("") }
 
     Scaffold(
@@ -67,19 +71,16 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         modifier = modifier
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).fillMaxSize()) {
-            itemsIndexed(items) { index, item ->
+            itemsIndexed(tasks?: emptyList()) { _, task ->
                 ListItem(
-                    text = item,
+                    text = task.taskName,
                     onEdit = {
-                        currentItemIndex = index
-                        editedText = items[index]
+                        currentItem = task
+                        editedText = task.taskName
                         isEditing = true
                         showEditDialog = true
                     },
-                    onDelete = {
-                        items.removeAt(index)
-                    },
-                    index = index
+                    onDelete = { viewModel.delete(task) }
                 )
             }
         }
@@ -90,10 +91,10 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 text = editedText,
                 onDismiss = { showEditDialog = false },
                 onConfirm = {
-                    if (isEditing && currentItemIndex >= 0) {
-                        items[currentItemIndex] = editedText
+                    if (isEditing && currentItem != null) {
+                        viewModel.update(currentItem!!.copy(taskName = editedText))
                     } else {
-                        items.add(editedText)
+                        viewModel.insert(TaskEntity(taskName = editedText))
                     }
                     showEditDialog = false
                 },
@@ -106,9 +107,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 @Composable
 fun ListItem(
     text: String,
-    onEdit: (Int) -> Unit,
-    onDelete: (Int) -> Unit,
-    index: Int
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -126,10 +126,10 @@ fun ListItem(
                 .padding(top = 8.dp),
             horizontalArrangement = Arrangement.End
         ) {
-            IconButton(onClick = { onEdit(index) }) {
+            IconButton(onClick = onEdit) {
                 Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
             }
-            IconButton(onClick = { onDelete(index) }) {
+            IconButton(onClick = onDelete) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")
             }
         }
