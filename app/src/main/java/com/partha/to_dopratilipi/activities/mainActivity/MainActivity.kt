@@ -45,7 +45,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,7 +65,6 @@ import com.partha.to_dopratilipi.ui.theme.TODOPratilipiTheme
 import com.partha.to_dopratilipi.util.DraggableItem
 import com.partha.to_dopratilipi.util.dragContainer
 import com.partha.to_dopratilipi.util.rememberDragDropState
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,102 +110,98 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
         viewModel.insertTasks(tasks)
     })
 
-    Scaffold(
-        modifier = modifier
-    ) {
-        Column(modifier = modifier.fillMaxSize()) {
-            Text(
-                text = "To-Do List",
-                fontSize = 25.sp,
-                modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+    Column(modifier = modifier.fillMaxSize()) {
+        Text(
+            text = "To-Do List",
+            fontSize = 25.sp,
+            modifier = Modifier.padding(top = 16.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
+        )
 
-            // New Task Input with Add Button
-            Row(
+        // New Task Input with Add Button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            TextField(
+                value = newTaskText,
+                onValueChange = { newTaskText = it },
+                placeholder = { Text("Add your new todo") },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .weight(1f)
+                    .padding(end = 8.dp),
+            )
+            Button(
+                onClick = {
+                    if (newTaskText.isNotEmpty()) {
+                        viewModel.insert(TaskEntity(taskName = newTaskText))
+                        newTaskText = ""
+                    } else {
+                        Toast.makeText(context, "Please input a task to add", Toast.LENGTH_SHORT).show()
+                    }
+                }
             ) {
-                TextField(
-                    value = newTaskText,
-                    onValueChange = { newTaskText = it },
-                    placeholder = { Text("Add your new todo") },
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp),
-                )
-                Button(
-                    onClick = {
-                        if (newTaskText.isNotEmpty()) {
-                            viewModel.insert(TaskEntity(taskName = newTaskText))
-                            newTaskText = ""
-                        } else {
-                            Toast.makeText(context, "Please input a task to add", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Add Task")
-                }
-            }
-
-            if (tasks.isEmpty()) {
-                // Show the empty state message if no task is available
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "Add some new tasks to your to-do list")
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .dragContainer(dragDropState),
-                    state = listState
-                ) {
-                    itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
-                        DraggableItem(dragDropState, index) { isDragging ->
-                            val elevation by animateDpAsState(if (isDragging) 4.dp else 1.dp)
-                            ListItem(
-                                text = task.taskName,
-                                onEdit = {
-                                    currentItem = task
-                                    editedText = task.taskName
-                                    isEditing = true
-                                    showEditDialog = true
-                                    editedIndex = index
-                                },
-                                onDelete = {
-                                    viewModel.delete(task)
-                                },
-                                elevation = elevation
-                            )
-                        }
-                    }
-                }
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Task")
             }
         }
 
-        if (showEditDialog) {
-            EditItemDialog(
-                title = if (isEditing) "Edit Task" else "Add Task",
-                text = editedText,
-                onDismiss = { showEditDialog = false },
-                onConfirm = {
-                    if (isEditing && currentItem != null && editedText.isNotEmpty()) {
-                        viewModel.update(currentItem!!.copy(taskName = editedText))
-                        tasks[editedIndex] = currentItem!!.copy(taskName = editedText)
-                        showEditDialog = false
-                    } else {
-                        Toast.makeText(context, "Task can not be empty", Toast.LENGTH_SHORT).show()
+        if (tasks.isEmpty()) {
+            // Show the empty state message if no task is available
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Add some new tasks to your to-do list")
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .dragContainer(dragDropState),
+                state = listState
+            ) {
+                itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
+                    DraggableItem(dragDropState, index) { isDragging ->
+                        val elevation by animateDpAsState(if (isDragging) 4.dp else 1.dp)
+                        ListItem(
+                            text = task.taskName,
+                            onEdit = {
+                                currentItem = task
+                                editedText = task.taskName
+                                isEditing = true
+                                showEditDialog = true
+                                editedIndex = index
+                            },
+                            onDelete = {
+                                viewModel.delete(task)
+                            },
+                            elevation = elevation
+                        )
                     }
-                },
-                onTextChange = { editedText = it }
-            )
+                }
+            }
         }
     }
+
+    if (showEditDialog) {
+        EditItemDialog(
+            title = if (isEditing) "Edit Task" else "Add Task",
+            text = editedText,
+            onDismiss = { showEditDialog = false },
+            onConfirm = {
+                if (isEditing && currentItem != null && editedText.isNotEmpty()) {
+                    viewModel.update(currentItem!!.copy(taskName = editedText))
+                    tasks[editedIndex] = currentItem!!.copy(taskName = editedText)
+                    showEditDialog = false
+                } else {
+                    Toast.makeText(context, "Task can not be empty", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onTextChange = { editedText = it }
+        )
+    }
+
 }
 
 
@@ -221,7 +215,6 @@ fun ListItem(
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     val animatedOffsetX by animateFloatAsState(targetValue = offsetX)
-    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
@@ -254,9 +247,7 @@ fun ListItem(
                         onDragEnd = {
                             if (offsetX < -200f) {
                                 // Trigger delete action
-                                coroutineScope.launch {
-                                    onDelete()
-                                }
+                                onDelete()
                             } else {
                                 // Reset the position if the swipe is not enough
                                 offsetX = 0f
