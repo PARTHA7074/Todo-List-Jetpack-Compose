@@ -13,18 +13,20 @@ import kotlinx.coroutines.launch
 class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: TaskRepository
-    val allTasks = MutableLiveData<List<TaskEntity>?>()
+    val allTasks = MutableLiveData<List<TaskEntity>>()
 
     init {
         val taskDao = TaskDatabase.getDatabase(application).taskDao()
         repository = TaskRepository(taskDao)
         viewModelScope.launch(Dispatchers.IO) {
-            allTasks.postValue(repository.getAllTasks())
+            allTasks.postValue(repository.getAllTasks()?: emptyList())
         }
     }
 
     fun insert(task: TaskEntity) = viewModelScope.launch(Dispatchers.IO) {
         repository.insert(task)
+        // Refresh the task list to sync the newly added ID
+        allTasks.postValue(repository.getAllTasks())
     }
 
     fun update(task: TaskEntity) = viewModelScope.launch(Dispatchers.IO) {
@@ -33,5 +35,10 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     fun delete(task: TaskEntity) = viewModelScope.launch(Dispatchers.IO) {
         repository.delete(task)
+    }
+
+    fun replaceAllTasks(newTasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
+        repository.replaceAllTasks(newTasks)
+        allTasks.postValue(newTasks)
     }
 }

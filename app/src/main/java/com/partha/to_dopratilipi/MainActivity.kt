@@ -1,6 +1,7 @@
 package com.partha.to_dopratilipi
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,8 +23,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalContext
 import com.partha.to_dopratilipi.room.TaskEntity
 import com.partha.to_dopratilipi.ui.theme.TODOPratilipiTheme
+import kotlin.coroutines.coroutineContext
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -52,11 +55,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewModel()) {
-    val tasks by viewModel.allTasks.observeAsState(emptyList())
+    val tasks = remember { mutableStateListOf<TaskEntity>() }
+    val observedTasks by viewModel.allTasks.observeAsState(emptyList())
+    LaunchedEffect(observedTasks) {
+        tasks.clear()
+        tasks.addAll(observedTasks)
+    }
     var showEditDialog by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
     var currentItem by remember { mutableStateOf<TaskEntity?>(null) }
     var editedText by remember { mutableStateOf("") }
+    var editedIndex by remember { mutableIntStateOf(-1) }
 
     Scaffold(
         floatingActionButton = {
@@ -70,8 +79,10 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
         },
         modifier = modifier
     ) { padding ->
-        LazyColumn(modifier = Modifier.padding(padding).fillMaxSize()) {
-            itemsIndexed(tasks?: emptyList()) { _, task ->
+        LazyColumn(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
+            itemsIndexed(tasks) { index, task ->
                 ListItem(
                     text = task.taskName,
                     onEdit = {
@@ -79,8 +90,12 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
                         editedText = task.taskName
                         isEditing = true
                         showEditDialog = true
+                        editedIndex = index
                     },
-                    onDelete = { viewModel.delete(task) }
+                    onDelete = {
+                        viewModel.delete(task)
+                        tasks.removeAt(index)
+                    }
                 )
             }
         }
@@ -93,6 +108,7 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
                 onConfirm = {
                     if (isEditing && currentItem != null) {
                         viewModel.update(currentItem!!.copy(taskName = editedText))
+                        tasks[editedIndex] = currentItem!!.copy(taskName = editedText)
                     } else {
                         viewModel.insert(TaskEntity(taskName = editedText))
                     }

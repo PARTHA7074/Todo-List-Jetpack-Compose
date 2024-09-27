@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 
 @Dao
@@ -20,4 +21,16 @@ interface TaskDao {
 
     @Query("SELECT * FROM tasks")
     fun getAllTasks(): List<TaskEntity>?
+
+    @Query("DELETE FROM tasks")
+    suspend fun clearAllTasks()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTasks(tasks: List<TaskEntity>)
+
+    @Transaction
+    suspend fun replaceAllTasks(newTasks: List<TaskEntity>) {
+        clearAllTasks()
+        insertTasks(newTasks)
+    }
 }
