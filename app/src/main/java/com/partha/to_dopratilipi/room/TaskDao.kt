@@ -20,7 +20,7 @@ interface TaskDao {
     suspend fun deleteTask(task: TaskEntity)
 
     @Query("SELECT * FROM tasks")
-    fun getAllTasks(): List<TaskEntity>?
+    suspend fun getAllTasks(): List<TaskEntity>?
 
     @Query("DELETE FROM tasks")
     suspend fun clearAllTasks()
@@ -28,9 +28,4 @@ interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTasks(tasks: List<TaskEntity>)
 
-    @Transaction
-    suspend fun replaceAllTasks(newTasks: List<TaskEntity>) {
-        clearAllTasks()
-        insertTasks(newTasks)
-    }
 }

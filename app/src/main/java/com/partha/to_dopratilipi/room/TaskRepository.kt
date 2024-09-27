@@ -26,8 +26,4 @@ class TaskRepository(private val taskDao: TaskDao) {
         taskDao.insertTasks(tasks)
     }
 
-    suspend fun replaceAllTasks(tasks: List<TaskEntity>) {
-        taskDao.replaceAllTasks(tasks)
-    }
-
 }

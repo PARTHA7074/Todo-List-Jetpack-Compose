@@ -37,7 +37,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         repository.delete(task)
     }
 
-    fun replaceAllTasks(newTasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
-        repository.replaceAllTasks(newTasks)
+    fun insertTasks(newTasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
+        repository.insertTasks(newTasks)
     }
 }
