@@ -1,4 +1,4 @@
-package com.partha.to_dopratilipi
+package com.partha.to_dopratilipi.activities.MainActivity
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -35,6 +35,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
 
     fun delete(task: TaskEntity) = viewModelScope.launch(Dispatchers.IO) {
         repository.delete(task)
+        allTasks.postValue(repository.getAllTasks())
     }
 
     fun insertTasks(newTasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {

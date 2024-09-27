@@ -1,21 +1,24 @@
-package com.partha.to_dopratilipi
+package com.partha.to_dopratilipi.activities.MainActivity
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,15 +31,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,15 +45,16 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -64,25 +65,15 @@ import com.partha.to_dopratilipi.ui.theme.TODOPratilipiTheme
 import com.partha.to_dopratilipi.util.DraggableItem
 import com.partha.to_dopratilipi.util.dragContainer
 import com.partha.to_dopratilipi.util.rememberDragDropState
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             TODOPratilipiTheme {
-                Scaffold/*(
-                    topBar = {
-                        TopAppBar(
-                            title = { Text(text = "To-Do List") },
-                            colors = TopAppBarDefaults.mediumTopAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceDim,
-                                titleContentColor = Color.Black
-                            )
-                        )
-                    }
-                )*/ { innerPadding ->
+                Scaffold { innerPadding ->
                     HomeScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
@@ -122,7 +113,7 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
     Scaffold(
         modifier = modifier
     ) {
-        Column(modifier = modifier) {
+        Column(modifier = modifier.fillMaxSize()) {
             Text(
                 text = "To-Do List",
                 fontSize = 25.sp,
@@ -143,7 +134,6 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 8.dp),
-
                 )
                 Button(
                     onClick = {
@@ -157,30 +147,40 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .dragContainer(dragDropState),
-                state = listState
-            ) {
-                itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
-                    DraggableItem(dragDropState, index) { isDragging ->
-                        val elevation by animateDpAsState(if (isDragging) 4.dp else 1.dp)
-                        ListItem(
-                            text = task.taskName,
-                            onEdit = {
-                                currentItem = task
-                                editedText = task.taskName
-                                isEditing = true
-                                showEditDialog = true
-                                editedIndex = index
-                            },
-                            onDelete = {
-                                viewModel.delete(task)
-                                tasks.removeAt(index)
-                            },
-                            elevation = elevation
-                        )
+            if (tasks.isEmpty()) {
+                // Show the empty state message if no task is available
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = "Add some new tasks to your to-do list")
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .dragContainer(dragDropState),
+                    state = listState
+                ) {
+                    itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
+                        DraggableItem(dragDropState, index) { isDragging ->
+                            val elevation by animateDpAsState(if (isDragging) 4.dp else 1.dp)
+                            ListItem(
+                                text = task.taskName,
+                                onEdit = {
+                                    currentItem = task
+                                    editedText = task.taskName
+                                    isEditing = true
+                                    showEditDialog = true
+                                    editedIndex = index
+                                },
+                                onDelete = {
+                                    viewModel.delete(task)
+                                },
+                                elevation = elevation
+                            )
+                        }
                     }
                 }
             }
@@ -207,6 +207,7 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
 }
 
 
+
 @Composable
 fun ListItem(
     text: String,
@@ -214,56 +215,91 @@ fun ListItem(
     onDelete: () -> Unit,
     elevation: Dp = 1.dp
 ) {
-    Card(
+    var offsetX by remember { mutableStateOf(0f) }
+    val animatedOffsetX by animateFloatAsState(targetValue = offsetX)
+    val coroutineScope = rememberCoroutineScope()
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .zIndex(if (elevation > 1.dp) 1f else 0f),
-        elevation = CardDefaults.cardElevation(defaultElevation = elevation)
+            .clip(RoundedCornerShape(16.dp))
     ) {
-        Column(
+        // Background for delete action
+        Box(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(16.dp)
-                .graphicsLayer {
-                    if (elevation > 1.dp) {
-                        translationY = elevation.value
+                .matchParentSize()
+                .background(Color.Red)
+                .padding(horizontal = 20.dp),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete",
+                tint = Color.White
+            )
+        }
+
+        // Foreground content (the item itself)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(animatedOffsetX.toInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (offsetX < -200f) {
+                                // Trigger delete action
+                                coroutineScope.launch {
+                                    onDelete()
+                                }
+                            } else {
+                                // Reset the position if the swipe is not enough
+                                offsetX = 0f
+                            }
+                        }
+                    ) { _, dragAmount ->
+                        // Only allow swiping to the left
+                        if (offsetX + dragAmount < 0) {
+                            offsetX += dragAmount
+                        }
                     }
                 }
+                .zIndex(1f),
+            elevation = CardDefaults.cardElevation(defaultElevation = elevation)
         ) {
-            Text(
-                text = text,
-                letterSpacing = 0.01.em,
-                fontSize = 16.sp
-            )
-
-            // Menu Button for Edit and Delete
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onEdit) {
+                Text(
+                    text = text,
+                    letterSpacing = 0.01.em,
+                    fontSize = 16.sp
+                )
+
+                IconButton(
+                    onClick = onEdit,
+                ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit"
                     )
                 }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete"
-                    )
-                }
             }
+
         }
     }
 }
 
 
-
 @Composable
 fun EditItemDialog(
-    title: String = "Add Task",
+    title: String = "Edit Task",
     text: String = "",
     onDismiss: () -> Unit = {},
     onConfirm: () -> Unit = {},

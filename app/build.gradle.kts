@@ -73,4 +73,5 @@ dependencies {
     kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.foundation)
 }
