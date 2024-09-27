@@ -190,3 +190,11 @@ fun HomeScreenPreview() {
         HomeScreen()
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun ListItemPreview() {
+    TODOPratilipiTheme {
+        ListItem(text = "Test Task", onEdit = {}, onDelete = {})
+    }
+}
