@@ -1,4 +1,4 @@
-package com.partha.to_dopratilipi.activities.MainActivity
+package com.partha.to_dopratilipi.activities.mainActivity
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel

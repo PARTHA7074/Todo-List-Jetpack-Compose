@@ -1,6 +1,7 @@
-package com.partha.to_dopratilipi.activities.MainActivity
+package com.partha.to_dopratilipi.activities.mainActivity
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,7 +31,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -96,6 +97,7 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
     var currentItem by remember { mutableStateOf<TaskEntity?>(null) }
     var editedText by remember { mutableStateOf("") }
     var editedIndex by remember { mutableIntStateOf(-1) }
+    val context = LocalContext.current
 
     // Drag and drop state
     val listState = rememberLazyListState()
@@ -140,6 +142,8 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
                         if (newTaskText.isNotEmpty()) {
                             viewModel.insert(TaskEntity(taskName = newTaskText))
                             newTaskText = ""
+                        } else {
+                            Toast.makeText(context, "Please input a task to add", Toast.LENGTH_SHORT).show()
                         }
                     }
                 ) {
@@ -192,13 +196,13 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
                 text = editedText,
                 onDismiss = { showEditDialog = false },
                 onConfirm = {
-                    if (isEditing && currentItem != null) {
+                    if (isEditing && currentItem != null && editedText.isNotEmpty()) {
                         viewModel.update(currentItem!!.copy(taskName = editedText))
                         tasks[editedIndex] = currentItem!!.copy(taskName = editedText)
+                        showEditDialog = false
                     } else {
-                        viewModel.insert(TaskEntity(taskName = editedText))
+                        Toast.makeText(context, "Task can not be empty", Toast.LENGTH_SHORT).show()
                     }
-                    showEditDialog = false
                 },
                 onTextChange = { editedText = it }
             )
