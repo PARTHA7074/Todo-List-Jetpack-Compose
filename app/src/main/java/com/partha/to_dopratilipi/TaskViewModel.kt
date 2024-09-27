@@ -38,7 +38,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun replaceAllTasks(newTasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
-        repository.replaceAllTasks(newTasks)
-        allTasks.postValue(newTasks)
+        repository.clearAllTasks()
+        repository.insertTasks(newTasks)
     }
 }

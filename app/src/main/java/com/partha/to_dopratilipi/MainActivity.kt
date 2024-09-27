@@ -1,6 +1,7 @@
 package com.partha.to_dopratilipi
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -43,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -93,14 +95,16 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
     var currentItem by remember { mutableStateOf<TaskEntity?>(null) }
     var editedText by remember { mutableStateOf("") }
     var editedIndex by remember { mutableIntStateOf(-1) }
-    //val context = LocalContext.current
+    val context = LocalContext.current
 
     // Drag and drop state
     val listState = rememberLazyListState()
-    val dragDropState = rememberDragDropState(listState) { fromIndex, toIndex ->
+    val dragDropState = rememberDragDropState(listState, onMove = {  fromIndex, toIndex ->
         tasks.add(toIndex, tasks.removeAt(fromIndex))
-        //Toast.makeText(context, "Order Updated", Toast.LENGTH_SHORT).show()
-    }
+    }, onDragEnd = {
+        Toast.makeText(context, "Order Updated", Toast.LENGTH_SHORT).show()
+        viewModel.replaceAllTasks(tasks)
+    })
 
     Scaffold(
         floatingActionButton = {
