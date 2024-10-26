@@ -174,7 +174,7 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: TaskViewModel = viewMod
                                 editedIndex = index
                             },
                             onDelete = {
-                                viewModel.delete(tasks[index])
+                                viewModel.delete(task)
                             },
                             elevation = elevation
                         )
